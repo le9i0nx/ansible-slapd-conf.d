@@ -7,6 +7,20 @@
     values: '{{ slapd_ldap_security }}'
     state: 'present'
 
+- name: Configure LDAP local connection security
+  ldap_attr:
+    dn: 'cn=config'
+    name: 'olcLocalSSF'
+    values: [ '128' ]
+    state: 'exact'
+
+- name: Configure LDAP server id
+  ldap_attr:
+    dn: 'cn=config'
+    name: 'olcServerID'
+    values: '{{ slapd_ldap_server_id }}'
+    state: 'exact'
+
 - name: Configure LDAP indices
   ldap_attr:
     dn: 'olcDatabase={1}{{ slapd_backend }},cn=config'

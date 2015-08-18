@@ -149,6 +149,25 @@ slapd_ldapscripts_gdummymember: 'uid=dummy,$USUFFIX,$SUFFIX'
 slapd_ldapscripts_passwordgen: 'pwgen'
 
 
+slapd_ldap_server_id: [ '0' ]
+
+slapd_ldap_mirrormode: True
+
+slapd_ldap_mirrormode_provider: ''
+
+slapd_ldap_mirrormode_name: 'mirrormode'
+slapd_ldap_mirrormode_description: 'Syncrepl user for mirrormode operation'
+slapd_ldap_mirrormode_dn: '{{ "cn=" + slapd_ldap_mirrormode_name + "," + slapd_basedn }}'
+slapd_ldap_mirrormode_basepw: '{{ secret + "/slapd/credentials/" + slapd_basedn + "/" + slapd_ldap_mirrormode_dn + ".password" }}'
+
+
+slapd_ldap_mirrormode_pw_command: "openssl dgst -sha1 -binary | openssl enc -base64 | awk '{print \"{SHA}\"$0}'"
+
+slapd_ldap_mirrormode_pw: '{{ lookup("pipe", "echo -n " + lookup("password", slapd_ldap_mirrormode_basepw + " length=48") + " | " + slapd_ldap_mirrormode_pw_command) }}'
+
+#slapd_ldap_mirrormode_pw: '{{ "{SSHA}" + lookup("password", slapd_ldap_mirrormode_basepw +
+#                              ".password encrypt=sha512_crypt length=48") }}'
+
 # ---- Custom LDAP schema ----
 
 # These files will be automatically loaded into cn=config configuration
@@ -179,6 +198,10 @@ slapd_ldap_index_default:
   - 'uidNumber eq'
   - 'gidNumber eq'
   - 'memberUid eq'
+  - 'authorizedService eq'
+  - 'host eq'
+  - 'entryCSN eq'
+  - 'entryUUID eq'
 
 
 # ---- LDAP connection security ----
@@ -221,5 +244,7 @@ slapd_ldap_access_control_list_default:
      by tls_ssf=128 ssf=128 self read
      by tls_ssf=128 ssf=128 dn.subtree="ou=Machines,{{ slapd_basedn }}" read
      by tls_ssf=128 ssf=128 dn="{{ slapd_basedn_admin }}" write
+     {{ ("by tls_ssf=128 ssf=128 dn=\"" + slapd_ldap_mirrormode_dn + "\" read")
+        if slapd_ldap_mirrormodea|d() else "" }}
      by * none'
 

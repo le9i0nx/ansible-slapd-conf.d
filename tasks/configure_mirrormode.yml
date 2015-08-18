@@ -1,0 +1,65 @@
+---
+
+- name: Create mirrormode account
+  ldap_entry:
+    dn: '{{ slapd_ldap_mirrormode_dn }}'
+    objectClass: [ 'organizationalRole', 'simpleSecurityObject' ]
+    cn: '{{ slapd_ldap_mirrormode_name }}'
+    description: '{{ slapd_ldap_mirrormode_description }}'
+    userPassword: '{{ slapd_ldap_mirrormode_pw }}'
+    state: 'present'
+    start_tls:  '{{ secret_ldap_start_tls }}'
+    bind_dn: '{{ secret_ldap_admin_bind_dn }}'
+    bind_pw: '{{ secret_ldap_admin_bind_pw }}'
+  #no_log: True
+
+- name: Check list of currently loaded LDAP modules
+  shell: >
+    ldapsearch -LLL -Y EXTERNAL -H ldapi:/// -o ldif-wrap=no -b cn=module{0},cn=config -S olcModuleLoad olcModuleLoad 2>&1 | grep -E '^olcModuleLoad:\s' | perl -pe 's/olcModuleLoad: //;' | perl -pe 's/^{\d+}//;'
+  register: slapd_register_olc_modules
+  changed_when: False
+
+- name: Load syncprov module
+  ldap_attr:
+    dn: 'cn=module{0},cn=config'
+    name: 'olcModuleLoad'
+    values: [ 'syncprov' ]
+    state: 'present'
+  when: (slapd_register_olc_modules|d() and
+         'syncprov' not in slapd_register_olc_modules.stdout_lines)
+
+- name: Check if overlay configuration exists
+  shell: >
+    ldapsearch -LLL -Y EXTERNAL -H ldapi:/// -o ldif-wrap=no -b olcDatabase={1}{{ slapd_backend }},cn=config -S olcOverlay olcOverlay 2>&1 | grep -E '^olcOverlay:\s' || true
+  register: slapd_register_olc_overlay
+  changed_when: False
+
+- name: Initialize synchronization overlay in slapd
+  ldap_entry:
+    dn: 'olcOverlay={0}syncprov,olcDatabase={1}{{ slapd_backend }},cn=config'
+    objectClass: [ 'olcOverlayConfig', 'olcSyncProvConfig' ]
+    olcOverlay: '{0}syncprov'
+    olcSpCheckpoint: '100 10'
+    olcSpSessionLog: '100'
+    state: 'present'
+
+- name: Configure LDAP replication
+  ldap_attr:
+    dn: 'olcDatabase={1}{{ slapd_backend }},cn=config'
+    name: 'olcSyncrepl'
+    values: [ '{0}rid={{ slapd_ldap_mirrormode_rid }} provider="{{ slapd_ldap_mirrormode_provider }}"
+               binddn="{{ slapd_ldap_mirrormode_dn }}" credentials="{{ lookup("password", slapd_ldap_mirrormode_basepw) }}"
+               bindmethod=simple searchbase="{{ slapd_basedn }}" schemachecking=on logbase="cn=accesslog"
+               logfilter="(&(objectClass=auditWriteObject)(reqResult=0))" syncdata=accesslog
+               tls_cacert="/etc/ssl/certs/ca-certificates.crt" starttls=yes tls_reqcert=demand
+               tls_cert="/etc/pki/system/default.crt" tls_key="/etc/pki/system/default.key"
+               type=refreshAndPersist retry="60 +"' ]
+    state: 'exact'
+
+- name: Enable or disable MirrorMode
+  ldap_attr:
+    dn: 'olcDatabase={1}{{ slapd_backend }},cn=config'
+    name: 'olcMirrorMode'
+    values:  'TRUE'
+    state: 'exact'
+

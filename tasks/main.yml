@@ -48,10 +48,12 @@
 - include: password_config_admin.yml
 - include: password_basedn_admin.yml
 - include: tls.yml
+  tags: [ 'role::slapd:tls' ]
+
 - include: anonymous_bind.yml
 
 - include: ldap_configuration.yml
-  tags: slapd-config
+  tags: [ 'role::slapd:config', 'role::slapd:mirrormode' ]
 
 - name: Set slapd log level
   ldap_attr:
@@ -61,6 +63,7 @@
     state: 'exact'
   with_dict:
     olcLogLevel: '{{ slapd_log_level }}'
+  tags: [ 'role::slapd:config' ]
 
 - name: Configure enabled services
   lineinfile:
@@ -82,4 +85,9 @@
     state: 'present'
     job: '/usr/local/sbin/slapd-snapshot {{ slapd_snapshot_period }} 30'
   when: slapd_snapshot is defined and slapd_snapshot
+
+- name: Configure LDAP mirrorMode
+  include: configure_mirrormode.yml
+  when: slapd_ldap_mirrormode|d()
+  tags: [ 'role::slapd:mirrormode' ]
 

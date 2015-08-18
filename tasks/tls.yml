@@ -9,6 +9,10 @@
   notify: [ 'Restart slapd' ]
   when: slapd_pki is defined and slapd_pki
 
+- name: Execute all handlers if needed
+  meta: flush_handlers
+  when: slapd_pki is defined and slapd_pki
+
 - name: Configure TLS certificates
   ldap_attr:
     dn: 'cn=config'
