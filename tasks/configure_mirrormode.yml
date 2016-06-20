@@ -1,0 +1,18 @@
+---
+
+- name: Configure LDAP replication
+  ldap_attr:
+    dn: 'olcDatabase={1}{{ slapd_backend }},cn=config'
+    name: 'olcSyncrepl'
+    values: [ '{0}rid={{ slapd_ldap_mirrormode.rid }}
+                provider={{ slapd_ldap_mirrormode.provider }}
+                binddn="{{ slapd_ldap_mirrormode.binddn }}"
+                credentials={{ slapd_ldap_mirrormode.credentials }}
+                searchbase="{{ slapd_ldap_mirrormode.searchbase }}"
+                schemachecking={{ slapd_ldap_mirrormode.schemachecking |d("on") }}
+                type=refreshAndPersist
+                bindmethod=simple
+                retry="5 5 300 +"
+                attrs="*,+"' ]
+    state: 'exact'
+

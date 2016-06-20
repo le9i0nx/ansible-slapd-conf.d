@@ -84,3 +84,8 @@
     job: '/usr/local/sbin/slapd-snapshot {{ slapd_snapshot_period }} 30'
   when: slapd_snapshot is defined and slapd_snapshot
 
+- name: Configure LDAP mirrorMode
+  include: configure_mirrormode.yml
+  when: slapd_ldap_mirrormode|d()
+  tags: [ 'role::slapd:mirrormode' ]
+

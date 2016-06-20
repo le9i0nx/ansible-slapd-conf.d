@@ -529,3 +529,11 @@ slapd_tcpwrappers_dependent_allow:
     filename: 'slapd_dependent_allow'
     comment: 'Allow connections to OpenLDAP'
 
+slapd_ldap_mirrormode:
+  rid: '0'
+  provider: ''
+  binddn: '{{ slapd_basedn_admin }}'
+  credentials: '{{ lookup("password", slapd_basedn_admin_password + " length=" + slapd_password_length) }}'
+  searchbase: '{{ slapd_basedn }}'
+  schemachecking: 'off'
+
