@@ -32,15 +32,16 @@
 
 - name: Copy custom LDAP schema files
   copy:
-    src: 'usr/local/etc/ldap/schema/'
+    src: '{{ item }}'
     dest: '/usr/local/etc/ldap/schema/'
     owner: 'root'
     group: 'root'
     mode: '0644'
+  with_items: '{{ slapd_ldap_schema_directories }}'
 
 - name: Load custom LDAP schema files
   command: load-ldap-schema {{ item }}
-  with_items: slapd_ldap_schema
+  with_items: "{{ slapd_ldap_schema }}"
   register: slapd_register_load_schema
   when: slapd_ldap_schema is defined and slapd_ldap_schema
   changed_when: slapd_register_load_schema.stdout != ""

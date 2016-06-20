@@ -362,6 +362,16 @@ slapd_ldapscripts_passwordgen: 'pwgen'
 #   Custom LDAP schema
 # ----------------------
 
+# .. envvar:: slapd_ldap_schema_directories
+#
+# The variable indicates the folder from which to copy the schema.
+# This is a path located on Ansible Controller and the default path is relative
+# to the ``debops.slapd`` role directory.
+# You may also use the full path.
+slapd_ldap_schema_directories:
+  - 'usr/local/etc/ldap/schema/'
+
+
 # .. envvar:: slapd_ldap_schema
 #
 # These files will be automatically loaded into ``cn=config`` configuration
