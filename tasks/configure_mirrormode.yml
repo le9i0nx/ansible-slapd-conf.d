@@ -16,3 +16,10 @@
                 attrs="*,+"' ]
     state: 'exact'
 
+- name: Configure LDAP olcMirrorMode
+  ldap_attr:
+    dn: 'olcDatabase={1}{{ slapd_backend }},cn=config'
+    name: 'olcMirrorMode'
+    values: "{{ slapd_ldap_mirrormode_write|default('FALSE') }}"
+    state: 'exact'
+
